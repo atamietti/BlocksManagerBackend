@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BlocksManagerBackend.Blocks.Domain.Entities;
 
@@ -23,6 +24,9 @@ public class Block
 
         app.MapPost($"/{type.Name.ToLower()}/", async (string key, T block, IBlockRepository<T> service) =>
         {
+           if(HasErrors(key))
+                return Results.StatusCode(500);
+
             var result = await service.CreateBlock(key, block);
             return result ? Results.Ok(result) : Results.StatusCode(500);
         })
@@ -42,4 +46,7 @@ public class Block
         })
        .WithTags($"{type.Name}");
     }
+
+    private static bool HasErrors(string key)=>
+        string.IsNullOrWhiteSpace(key) || key.Contains(" ");
 }
