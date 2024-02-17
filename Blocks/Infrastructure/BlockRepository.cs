@@ -15,11 +15,11 @@ public class BlockRepository<T> : IBlockRepository<T> where T : Block
     }
     public async Task<bool> CreateBlock(string key, T block)
     {
-        var serializedModel = JsonSerializer.Serialize(block);
 
         if (block is ServicesBlock servicesBlock && servicesBlock is not null)
             foreach (var card in servicesBlock.ServiceCards)
                 card.SectionID = Guid.NewGuid();
+        var serializedModel = JsonSerializer.Serialize(block);
 
         return await _redis.StringSetAsync(key, serializedModel);
     }
