@@ -32,14 +32,14 @@ public class Block
         })
         .WithTags($"{type.Name}");
 
-        app.MapPut($"/{type.Name.ToLower()}/", async (string key, string sectionID, T updatedBlock, IBlockRepository<T> service) =>
+        app.MapPut($"/{type.Name.ToLower()}/", async (string key, string? sectionID, T updatedBlock, IBlockRepository<T> service) =>
         {
             var result = await service.UpdateBlock(key, sectionID, updatedBlock);
             return result ? Results.Ok("Success") : Results.StatusCode(500);
         })
         .WithTags($"{type.Name}");
 
-        app.MapDelete($"/{type.Name.ToLower()}/", async (string key, string sectionID, IBlockRepository<T> service) =>
+        app.MapDelete($"/{type.Name.ToLower()}/", async (string key, string? sectionID, IBlockRepository<T> service) =>
         {
             var result = await service.DeleteBlock(key, sectionID);
             return result ? Results.Ok("Success") : Results.StatusCode(500);

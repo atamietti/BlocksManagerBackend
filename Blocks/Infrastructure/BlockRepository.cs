@@ -11,7 +11,7 @@ public class BlockRepository<T> : IBlockRepository<T> where T : Block
 
     public BlockRepository(IConnectionMultiplexer redis)
     {
-        _redis = redis.GetDatabase();
+        _redis = redis.GetDatabase(1);
     }
     public async Task<bool> CreateBlock(string key, T block)
     {
@@ -62,36 +62,26 @@ public class BlockRepository<T> : IBlockRepository<T> where T : Block
         if (!existingModel.HasValue) return false;
 
         var model = JsonSerializer.Deserialize<T>(existingModel);
-        var serializedModel = JsonSerializer.Serialize(model);
 
         if (!string.IsNullOrEmpty(sectionID) && (model is ServicesBlock servicesBlock && servicesBlock is not null))
         {
-            if (block is ServiceCard serviceCard && serviceCard is not null)
+            if (block is ServicesBlock serviceCardBlock && serviceCardBlock is not null)
             {
                 var section = servicesBlock.ServiceCards.Find(f => f.SectionID.ToString() == sectionID);
                 if (section == null)
                     return false;
                 servicesBlock.ServiceCards.Remove(section);
-                servicesBlock.ServiceCards.Add(serviceCard);
-                return await UpdateBlock(key, string.Empty, block);
+                if (serviceCardBlock.ServiceCards.Any())
+                    foreach (var serviceCard in serviceCardBlock.ServiceCards)
+                        servicesBlock.ServiceCards.Add(serviceCard);
+
+                var serializedservicesBlock = JsonSerializer.Serialize(servicesBlock);
+                return await _redis.StringSetAsync(key, serializedservicesBlock);
             }
         }
+        var serializedBlock = JsonSerializer.Serialize(block);
 
-        return await _redis.StringSetAsync(key, serializedModel);
+        return await _redis.StringSetAsync(key, serializedBlock);
     }
-
-    // Method to get a list of values by key
-    private async Task<List<string>> GetListByKeyAsync(string key)
-    {
-        var values = await _redis.ListRangeAsync(key);
-        var result = new List<string>();
-
-        foreach (var value in values)
-        {
-            result.Add(value.ToString());
-        }
-
-        return result;
-    }
-
+      
 }
